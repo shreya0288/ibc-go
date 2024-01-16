@@ -174,6 +174,9 @@ message Acknowledgement {
 // This includes packet lifecycle handlers as well as the upgrade handshake handlers.
 // A valid Timeout contains either one or both of a timestamp and block height (sequence).
 message Timeout {
+  option (gogoproto.goproto_getters)  = false;
+  option (gogoproto.goproto_stringer) = false;
+  
   // block height after which the packet or upgrade times out
   ibc.core.client.v1.Height height = 1 [(gogoproto.nullable) = false];
   // block timestamp (in nanoseconds) after which the packet or upgrade times out

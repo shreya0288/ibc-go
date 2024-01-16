@@ -1,6 +1,8 @@
 package types
 
 import (
+	"fmt"
+
 	errorsmod "cosmossdk.io/errors"
 
 	clienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types"
@@ -57,4 +59,9 @@ func (t Timeout) heightElapsed(height clienttypes.Height) bool {
 // and the timeout timestamp is greater than or equal to the relative timestamp.
 func (t Timeout) timestampElapsed(timestamp uint64) bool {
 	return t.Timestamp != 0 && timestamp >= t.Timestamp
+}
+
+// String returns a string representation of Timeout.
+func (t Timeout) String() string {
+	return fmt.Sprintf("%s %d", t.Height.String(), t.Timestamp)
 }
