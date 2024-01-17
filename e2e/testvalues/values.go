@@ -99,3 +99,11 @@ var AllowAllClientsWildcardFeatureReleases = semverutil.FeatureReleases{
 		"v8.1",
 	},
 }
+
+// ChannelUpgrades represents the releases the channel upgrades feature.
+var ChannelUpgrades = semverutil.FeatureReleases{
+	MajorVersion: "v9",
+	MinorVersions: []string{
+		"v8.1",
+	},
+}

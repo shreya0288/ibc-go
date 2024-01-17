@@ -5,6 +5,7 @@ package upgrades
 import (
 	"context"
 	"fmt"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"testing"
 	"time"
 
@@ -49,6 +50,64 @@ func TestUpgradeTestSuite(t *testing.T) {
 
 type UpgradeTestSuite struct {
 	testsuite.E2ETestSuite
+}
+
+// UpgradeChain upgrades a chain to a specific version using the planName provided.
+// The software upgrade proposal is broadcast by the provided wallet.
+func (s *UpgradeTestSuite) UpgradeChain2(ctx context.Context, chain *cosmos.CosmosChain, wallet ibc.Wallet, planName, currentVersion, upgradeVersion string) {
+	plan := upgradetypes.Plan{
+		Name:   planName,
+		Height: int64(haltHeight),
+		Info:   fmt.Sprintf("upgrade version test from %s to %s", currentVersion, upgradeVersion),
+	}
+
+	msgSoftwareUpgrade := &upgradetypes.MsgSoftwareUpgrade{
+		Plan:      plan,
+		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+	}
+
+	s.ExecuteAndPassGovV1Proposal(ctx, msgSoftwareUpgrade, chain, wallet)
+
+	height, err := chain.Height(ctx)
+	s.Require().NoError(err, "error fetching height before upgrade")
+
+	timeoutCtx, timeoutCtxCancel := context.WithTimeout(ctx, time.Minute*2)
+	defer timeoutCtxCancel()
+
+	err = test.WaitForBlocks(timeoutCtx, int(haltHeight-height)+1, chain)
+	s.Require().Error(err, "chain did not halt at halt height")
+
+	var allNodes []test.ChainHeighter
+	for _, node := range chain.Nodes() {
+		allNodes = append(allNodes, node)
+	}
+
+	err = test.WaitForInSync(ctx, chain, allNodes...)
+	s.Require().NoError(err, "error waiting for node(s) to sync")
+
+	err = chain.StopAllNodes(ctx)
+	s.Require().NoError(err, "error stopping node(s)")
+
+	repository := chain.Nodes()[0].Image.Repository
+	chain.UpgradeVersion(ctx, s.DockerClient, repository, upgradeVersion)
+
+	err = chain.StartAllNodes(ctx)
+	s.Require().NoError(err, "error starting upgraded node(s)")
+
+	// we are reinitializing the clients because we need to update the hostGRPCAddress after
+	// the upgrade and subsequent restarting of nodes
+	s.InitGRPCClients(chain)
+
+	timeoutCtx, timeoutCtxCancel = context.WithTimeout(ctx, time.Minute*2)
+	defer timeoutCtxCancel()
+
+	err = test.WaitForBlocks(timeoutCtx, int(blocksAfterUpgrade), chain)
+	s.Require().NoError(err, "chain did not produce blocks after upgrade")
+
+	height, err = chain.Height(ctx)
+	s.Require().NoError(err, "error fetching height after upgrade")
+
+	s.Require().Greater(height, haltHeight, "height did not increment after upgrade")
 }
 
 // UpgradeChain upgrades a chain to a specific version using the planName provided.
@@ -654,17 +713,17 @@ func (s *UpgradeTestSuite) TestV7ToV8_1ChainUpgrade_ChannelUpgrades() {
 		s.Require().Equal(expected, actualBalance.Int64())
 	})
 
-	s.Require().NoError(test.WaitForBlocks(ctx, 5, chainA), "failed to wait for blocks")
+	s.Require().NoError(test.WaitForBlocks(ctx, 5, chainA, chainB), "failed to wait for blocks")
 
 	t.Run("upgrade chains", func(t *testing.T) {
 		t.Run("chain A", func(t *testing.T) {
 			govProposalWallet := s.CreateUserOnChainA(ctx, testvalues.StartingTokenAmount)
-			s.UpgradeChain(ctx, chainA.(*cosmos.CosmosChain), govProposalWallet, testCfg.UpgradeConfig.PlanName, testCfg.ChainConfigs[0].Tag, testCfg.UpgradeConfig.Tag)
+			s.UpgradeChain2(ctx, chainA.(*cosmos.CosmosChain), govProposalWallet, testCfg.UpgradeConfig.PlanName, testCfg.ChainConfigs[0].Tag, testCfg.UpgradeConfig.Tag)
 		})
 
 		t.Run("chain B", func(t *testing.T) {
 			govProposalWallet := s.CreateUserOnChainB(ctx, testvalues.StartingTokenAmount)
-			s.UpgradeChain(ctx, chainB.(*cosmos.CosmosChain), govProposalWallet, testCfg.UpgradeConfig.PlanName, testCfg.ChainConfigs[0].Tag, testCfg.UpgradeConfig.Tag)
+			s.UpgradeChain2(ctx, chainB.(*cosmos.CosmosChain), govProposalWallet, testCfg.UpgradeConfig.PlanName, testCfg.ChainConfigs[1].Tag, testCfg.UpgradeConfig.Tag)
 		})
 	})
 

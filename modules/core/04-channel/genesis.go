@@ -12,10 +12,13 @@ import (
 // InitGenesis initializes the ibc channel submodule's state from a provided genesis
 // state.
 func InitGenesis(ctx sdk.Context, k keeper.Keeper, gs types.GenesisState) {
+	if gs.Params == nil {
+		panic("invalid IBC channel genesis state: missing params")
+	}
 	if err := gs.Params.Validate(); err != nil {
 		panic(fmt.Sprintf("invalid ibc channel genesis state parameters: %v", err))
 	}
-	k.SetParams(ctx, gs.Params)
+	k.SetParams(ctx, *gs.Params)
 	for _, channel := range gs.Channels {
 		ch := types.NewChannel(channel.State, channel.Ordering, channel.Counterparty, channel.ConnectionHops, channel.Version)
 		k.SetChannel(ctx, channel.PortId, channel.ChannelId, ch)
@@ -43,6 +46,7 @@ func InitGenesis(ctx sdk.Context, k keeper.Keeper, gs types.GenesisState) {
 
 // ExportGenesis returns the ibc channel submodule's exported genesis.
 func ExportGenesis(ctx sdk.Context, k keeper.Keeper) types.GenesisState {
+	params := k.GetParams(ctx)
 	return types.GenesisState{
 		Channels:            k.GetAllChannels(ctx),
 		Acknowledgements:    k.GetAllPacketAcks(ctx),
@@ -52,6 +56,6 @@ func ExportGenesis(ctx sdk.Context, k keeper.Keeper) types.GenesisState {
 		RecvSequences:       k.GetAllPacketRecvSeqs(ctx),
 		AckSequences:        k.GetAllPacketAckSeqs(ctx),
 		NextChannelSequence: k.GetNextChannelSequence(ctx),
-		Params:              k.GetParams(ctx),
+		Params:              &params,
 	}
 }

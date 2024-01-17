@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	channeltypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
 	"os"
 	"path"
 	"strings"
@@ -539,6 +540,27 @@ func getGenesisModificationFunction(cc ChainConfig) func(ibc.ChainConfig, []byte
 	return defaultGovv1Beta1ModifyGenesis(version)
 }
 
+func modifyChannelGenesisAppState(chainConfig ibc.ChainConfig, ibcAppState []byte) ([]byte, error) {
+	cfg := testutil.MakeTestEncodingConfig()
+
+	cdc := codec.NewProtoCodec(cfg.InterfaceRegistry)
+	clienttypes.RegisterInterfaces(cfg.InterfaceRegistry)
+	channeltypes.RegisterInterfaces(cfg.InterfaceRegistry)
+
+	ibcGenesisState := &ibctypes.GenesisState{}
+	if err := cdc.UnmarshalJSON(ibcAppState, ibcGenesisState); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal genesis bytes into client genesis state: %w", err)
+	}
+
+	// before channel upgrades the channel genesis did not have a params field.
+	if !testvalues.ChannelUpgrades.IsSupported(chainConfig.Images[0].Version) {
+		ibcGenesisState.ChannelGenesis.Params = nil
+	}
+	ibcGenBz := MustProtoMarshalJSON(ibcGenesisState)
+
+	return ibcGenBz, nil
+}
+
 // defaultGovv1ModifyGenesis will only modify governance params to ensure the voting period and minimum deposit
 // are functional for e2e testing purposes.
 func defaultGovv1ModifyGenesis(version string) func(ibc.ChainConfig, []byte) ([]byte, error) {
@@ -568,6 +590,11 @@ func defaultGovv1ModifyGenesis(version string) func(ibc.ChainConfig, []byte) ([]
 			appState[ibcexported.ModuleName] = ibcGenBz
 		}
 
+		bz, err := modifyChannelGenesisAppState(chainConfig, appState[ibcexported.ModuleName])
+		if err != nil {
+			return nil, err
+		}
+
 		appGenesis.AppState, err = json.Marshal(appState)
 		if err != nil {
 			return nil, err
@@ -581,10 +608,12 @@ func defaultGovv1ModifyGenesis(version string) func(ibc.ChainConfig, []byte) ([]
 			marshalIndentFn = json.MarshalIndent
 		}
 
-		bz, err := marshalIndentFn(appGenesis, "", "  ")
+		bz, err = marshalIndentFn(appGenesis, "", "  ")
 		if err != nil {
 			return nil, err
 		}
+
+		fmt.Println("GENESIS: " + string(bz))
 
 		return bz, nil
 	}
@@ -695,11 +724,7 @@ func modifyGovv1Beta1AppState(chainConfig ibc.ChainConfig, govAppState []byte) (
 	govGenesisState.DepositParams.MinDeposit = sdk.NewCoins(sdk.NewCoin(chainConfig.Denom, govv1beta1.DefaultMinDepositTokens))
 	govGenesisState.VotingParams.VotingPeriod = testvalues.VotingPeriod
 
-	govGenBz, err := cdc.MarshalJSON(govGenesisState)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal gov genesis state: %w", err)
-	}
-
+	govGenBz := MustProtoMarshalJSON(govGenesisState)
 	return govGenBz, nil
 }
 
@@ -716,10 +741,7 @@ func modifyClientGenesisAppState(ibcAppState []byte) ([]byte, error) {
 	}
 
 	ibcGenesisState.ClientGenesis.Params.AllowedClients = append(ibcGenesisState.ClientGenesis.Params.AllowedClients, wasmtypes.Wasm)
-	ibcGenBz, err := cdc.MarshalJSON(ibcGenesisState)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal gov genesis state: %w", err)
-	}
+	ibcGenBz := MustProtoMarshalJSON(ibcGenesisState)
 
 	return ibcGenBz, nil
 }

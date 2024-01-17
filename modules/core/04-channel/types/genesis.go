@@ -55,12 +55,13 @@ func NewGenesisState(
 		RecvSequences:       recvSeqs,
 		AckSequences:        ackSeqs,
 		NextChannelSequence: nextChannelSequence,
-		Params:              params,
+		Params:              &params,
 	}
 }
 
 // DefaultGenesisState returns the ibc channel submodule's default genesis state.
 func DefaultGenesisState() GenesisState {
+	params := DefaultParams()
 	return GenesisState{
 		Channels:            []IdentifiedChannel{},
 		Acknowledgements:    []PacketState{},
@@ -70,7 +71,7 @@ func DefaultGenesisState() GenesisState {
 		RecvSequences:       []PacketSequence{},
 		AckSequences:        []PacketSequence{},
 		NextChannelSequence: 0,
-		Params:              DefaultParams(),
+		Params:              &params,
 	}
 }
 
