@@ -2,7 +2,7 @@
   <h1>ibc-go</h1>
 </div>
 
-![Light Mode IBC Overview](docs/static/img/ibc-go-cover-light.svg#gh-light-mode-only)![Dark Mode IBC Overview](docs/static/img/ibc-go-cover-dark.svg#gh-dark-mode-only)
+![Light Mode IBC Overview](docs/static/img/ibc-go-cover-dark.svg#gh-light-mode-only)![Dark Mode IBC Overview](docs/static/img/ibc-go-cover-light.svg#gh-dark-mode-only)
 
 <div align="center">
   <a href="https://github.com/cosmos/ibc-go/releases/latest">
