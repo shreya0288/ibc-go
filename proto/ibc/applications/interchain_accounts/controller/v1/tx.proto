@@ -20,6 +20,8 @@ service Msg {
   rpc SendTx(MsgSendTx) returns (MsgSendTxResponse);
   // UpdateParams defines a rpc handler for MsgUpdateParams.
   rpc UpdateParams(MsgUpdateParams) returns (MsgUpdateParamsResponse);
+  // DeregisterInterchainAccount defines a rpc handler for MsgDeregisterInterchainAccount.
+  rpc DeregisterInterchainAccount(MsgDeregisterInterchainAccount) returns (MsgDeregisterInterchainAccountResponse);
 }
 
 // MsgRegisterInterchainAccount defines the payload for Msg/RegisterAccount
@@ -80,3 +82,21 @@ message MsgUpdateParams {
 
 // MsgUpdateParamsResponse defines the response for Msg/UpdateParams
 message MsgUpdateParamsResponse {}
+
+// MsgDeregisterInterchainAccount defines the payload for Msg/DeregisterAccount
+message MsgDeregisterInterchainAccount {
+  option (cosmos.msg.v1.signer) = "owner";
+
+  option (gogoproto.goproto_getters) = false;
+
+  string                    owner         = 1;
+  string                    connection_id = 2;
+}
+
+// MsgDeregisterInterchainAccountResponse defines the response for Msg/DeregisterAccount
+message MsgDeregisterInterchainAccountResponse {
+  option (gogoproto.goproto_getters) = false;
+
+  string channel_id = 1;
+  string port_id    = 2;
+}
