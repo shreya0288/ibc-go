@@ -89,8 +89,8 @@ message MsgDeregisterInterchainAccount {
 
   option (gogoproto.goproto_getters) = false;
 
-  string                    owner         = 1;
-  string                    connection_id = 2;
+  string owner         = 1;
+  string connection_id = 2;
 }
 
 // MsgDeregisterInterchainAccountResponse defines the response for Msg/DeregisterAccount
