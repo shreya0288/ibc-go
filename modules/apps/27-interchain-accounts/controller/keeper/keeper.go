@@ -6,11 +6,13 @@ import (
 	"fmt"
 	"strings"
 
+	"cosmossdk.io/collections"
 	errorsmod "cosmossdk.io/errors"
 	"cosmossdk.io/log"
 	storetypes "cosmossdk.io/store/types"
 
 	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/runtime"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	capabilitytypes "github.com/cosmos/ibc-go/modules/capability/types"
@@ -37,6 +39,11 @@ type Keeper struct {
 
 	msgRouter icatypes.MessageRouter
 
+	// State Management Schema
+	Schema collections.Schema
+	// DeregisteredAccounts is a set of (connectionID, portID) pairs that have been deregistered
+	DeregisteredAccounts collections.KeySet[collections.Pair[string, string]]
+
 	// the address capable of executing a MsgUpdateParams message. Typically, this
 	// should be the x/gov module account.
 	authority string
@@ -52,7 +59,13 @@ func NewKeeper(
 		panic(errors.New("authority must be non-empty"))
 	}
 
-	return Keeper{
+	kvKey, ok := key.(*storetypes.KVStoreKey)
+	if !ok {
+		panic(errors.New("store key must be a KVStoreKey"))
+	}
+
+	sb := collections.NewSchemaBuilder(runtime.NewKVStoreService(kvKey))
+	k := Keeper{
 		storeKey:       key,
 		cdc:            cdc,
 		legacySubspace: legacySubspace,
@@ -61,8 +74,21 @@ func NewKeeper(
 		portKeeper:     portKeeper,
 		scopedKeeper:   scopedKeeper,
 		msgRouter:      msgRouter,
-		authority:      authority,
+		DeregisteredAccounts: collections.NewKeySet(
+			sb, types.DeregisteredAccountsKey, "deregistered_accounts",
+			collections.PairKeyCodec(collections.StringKey, collections.StringKey),
+		),
+		authority: authority,
 	}
+
+	schema, err := sb.Build()
+	if err != nil {
+		panic(err)
+	}
+
+	k.Schema = schema
+
+	return k
 }
 
 // WithICS4Wrapper sets the ICS4Wrapper. This function may be used after

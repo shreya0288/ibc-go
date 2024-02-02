@@ -15,7 +15,6 @@ import (
 	channeltypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
 	porttypes "github.com/cosmos/ibc-go/v8/modules/core/05-port/types"
 	host "github.com/cosmos/ibc-go/v8/modules/core/24-host"
-	ibcerrors "github.com/cosmos/ibc-go/v8/modules/core/errors"
 	ibcexported "github.com/cosmos/ibc-go/v8/modules/core/exported"
 )
 
@@ -139,13 +138,25 @@ func (IBCMiddleware) OnChanOpenConfirm(
 }
 
 // OnChanCloseInit implements the IBCMiddleware interface
-func (IBCMiddleware) OnChanCloseInit(
+func (im IBCMiddleware) OnChanCloseInit(
 	ctx sdk.Context,
 	portID,
 	channelID string,
 ) error {
-	// Disallow user-initiated channel closing for interchain account channels
-	return errorsmod.Wrap(ibcerrors.ErrInvalidRequest, "user cannot close channel")
+	if err := im.keeper.OnChanCloseInit(ctx, portID, channelID); err != nil {
+		return err
+	}
+
+	connectionID, err := im.keeper.GetConnectionID(ctx, portID, channelID)
+	if err != nil {
+		return err
+	}
+
+	if im.app != nil && im.keeper.IsMiddlewareEnabled(ctx, portID, connectionID) {
+		return im.app.OnChanCloseInit(ctx, portID, channelID)
+	}
+
+	return nil
 }
 
 // OnChanCloseConfirm implements the IBCMiddleware interface

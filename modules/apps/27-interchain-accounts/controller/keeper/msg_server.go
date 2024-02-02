@@ -3,12 +3,15 @@ package keeper
 import (
 	"context"
 
+	"cosmossdk.io/collections"
 	errorsmod "cosmossdk.io/errors"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	"github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/controller/types"
 	icatypes "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/types"
+	channeltypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
 	ibcerrors "github.com/cosmos/ibc-go/v8/modules/core/errors"
 )
 
@@ -39,6 +42,10 @@ func (s msgServer) RegisterInterchainAccount(goCtx context.Context, msg *types.M
 
 	s.SetMiddlewareDisabled(ctx, portID, msg.ConnectionId)
 
+	if err := s.DeregisteredAccounts.Remove(ctx, collections.Join(msg.ConnectionId, portID)); err != nil {
+		return nil, err
+	}
+
 	channelID, err := s.registerInterchainAccount(ctx, msg.ConnectionId, portID, msg.Version, msg.Ordering)
 	if err != nil {
 		s.Logger(ctx).Error("error registering interchain account", "error", err.Error())
@@ -48,6 +55,40 @@ func (s msgServer) RegisterInterchainAccount(goCtx context.Context, msg *types.M
 	s.Logger(ctx).Info("successfully registered interchain account", "channel-id", channelID)
 
 	return &types.MsgRegisterInterchainAccountResponse{
+		ChannelId: channelID,
+		PortId:    portID,
+	}, nil
+}
+
+// DeregisterInterchainAccount defines a rpc handler for MsgDeregisterInterchainAccount
+func (s msgServer) DeregisterInterchainAccount(goCtx context.Context, msg *types.MsgDeregisterInterchainAccount) (*types.MsgDeregisterInterchainAccountResponse, error) {
+	ctx := sdk.UnwrapSDKContext(goCtx)
+
+	portID, err := icatypes.NewControllerPortID(msg.Owner)
+	if err != nil {
+		return nil, err
+	}
+
+	channelID, isOpen := s.GetOpenActiveChannel(ctx, msg.ConnectionId, portID)
+	if !isOpen {
+		return nil, errorsmod.Wrap(icatypes.ErrInvalidChannelFlow, "channel is not active")
+	}
+
+	if err := s.DeregisteredAccounts.Set(ctx, collections.Join(msg.ConnectionId, portID)); err != nil {
+		return nil, err
+	}
+
+	msgCloseInit := channeltypes.NewMsgChannelCloseInit(portID, channelID, authtypes.NewModuleAddress(icatypes.ModuleName).String())
+	handler := s.msgRouter.Handler(msgCloseInit)
+	res, err := handler(ctx, msgCloseInit)
+	if err != nil {
+		return nil, err
+	}
+
+	// NOTE: The sdk msg handler creates a new EventManager, so events must be correctly propagated back to the current context
+	ctx.EventManager().EmitEvents(res.GetEvents())
+
+	return &types.MsgDeregisterInterchainAccountResponse{
 		ChannelId: channelID,
 		PortId:    portID,
 	}, nil

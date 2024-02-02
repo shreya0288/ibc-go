@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"cosmossdk.io/collections"
 	errorsmod "cosmossdk.io/errors"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -38,10 +39,15 @@ func (k Keeper) OnChanOpenInit(
 		return "", errorsmod.Wrapf(icatypes.ErrInvalidHostPort, "expected %s, got %s", icatypes.HostPortID, counterparty.PortId)
 	}
 
-	var (
-		err      error
-		metadata icatypes.Metadata
-	)
+	isDeregistered, err := k.DeregisteredAccounts.Has(ctx, collections.Join(connectionHops[0], portID))
+	if err != nil {
+		return "", err
+	}
+	if isDeregistered {
+		return "", errorsmod.Wrap(icatypes.ErrInvalidChannelFlow, "interchain account has been deregistered")
+	}
+
+	var metadata icatypes.Metadata
 	if strings.TrimSpace(version) == "" {
 		connection, err := k.channelKeeper.GetConnection(ctx, connectionHops[0])
 		if err != nil {
@@ -127,6 +133,31 @@ func (k Keeper) OnChanOpenAck(
 
 	k.SetActiveChannelID(ctx, metadata.ControllerConnectionId, portID, channelID)
 	k.SetInterchainAccountAddress(ctx, metadata.ControllerConnectionId, portID, metadata.Address)
+
+	return nil
+}
+
+// OnChanCloseInit initiates the channel close handshake
+func (k Keeper) OnChanCloseInit(
+	ctx sdk.Context,
+	portID,
+	channelID string,
+) error {
+	channel, found := k.channelKeeper.GetChannel(ctx, portID, channelID)
+	if !found {
+		return errorsmod.Wrapf(channeltypes.ErrChannelNotFound, "port ID (%s) channel ID (%s)", portID, channelID)
+	}
+	if channel.State != channeltypes.OPEN {
+		return errorsmod.Wrapf(channeltypes.ErrInvalidChannelState, "expected %s, got %s", channeltypes.OPEN, channel.State)
+	}
+
+	isDeregistered, err := k.DeregisteredAccounts.Has(ctx, collections.Join(channel.ConnectionHops[0], portID))
+	if err != nil {
+		return err
+	}
+	if !isDeregistered {
+		return errorsmod.Wrap(icatypes.ErrInvalidChannelFlow, "interchain account has not been deregistered")
+	}
 
 	return nil
 }
