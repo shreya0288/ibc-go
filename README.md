@@ -5,6 +5,24 @@
 ![banner](docs/static/img/IBC-go-cover.svg)
 
 <div align="center">
+
+[![Version](https://img.shields.io/github/tag/cosmos/ibc-go.svg)](https://github.com/cosmos/ibc-go/releases/latest)
+[![License: Apache-2.0](https://img.shields.io/github/license/cosmos/ibc-go.svg)](https://github.com/cosmos/ibc-go/blob/main/LICENSE)
+[![GoDoc](https://godoc.org/github.com/cosmos/ibc-go?status.svg)](https://pkg.go.dev/github.com/cosmos/ibc-go?tab=doc)
+[![Go report card](https://goreportcard.com/badge/github.com/cosmos/ibc-go)](https://goreportcard.com/report/github.com/cosmos/ibc-go)
+[![Code Coverage](https://codecov.io/gh/cosmos/ibc-go/branch/main/graph/badge.svg)](https://codecov.io/gh/cosmos/ibc-go)
+</div>
+
+<div align="center">
+
+[![Lines Of Code](https://tokei.rs/b1/github/cosmos/ibc-go)](https://github.com/cosmos/ibc-go)
+[![Discord](https://img.shields.io/discord/669268347736686612.svg)](https://discord.gg/cosmosnetwork)
+[![Imported by](https://sourcegraph.com/github.com/cosmos/ibc-go/-/badge.svg)](https://sourcegraph.com/github.com/cosmos/ibc-go?badge)
+[![Tests / Code Coverage Status](https://github.com/cosmos/ibc-go/workflows/Tests%20/%20Code%20Coverage/badge.svg)](https://app.codecov.io/gh/cosmos/ibc-go)
+[![E2E Status](https://github.com/cosmos/ibc-go/actions/workflows/e2e.yaml/badge.svg?branch=main)](https://github.com/cosmos/ibc-go/tree/main/e2e)
+</div>
+
+<div align="center">
   <a href="https://github.com/cosmos/ibc-go/releases/latest">
     <img alt="Version" src="https://img.shields.io/github/tag/cosmos/ibc-go.svg" />
   </a>
