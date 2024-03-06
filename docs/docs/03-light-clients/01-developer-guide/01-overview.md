@@ -27,6 +27,7 @@ The following aims to provide a high level IBC light client module developer gui
 
 A light client module developer should be concerned with three main interfaces:
 
+- [`LightClientModule`](#lightclientmodule) encapsulates the light client implementation and its semantics.
 - [`ClientState`](#clientstate) encapsulates the light client implementation and its semantics.
 - [`ConsensusState`](#consensusstate) tracks consensus data used for verification of client updates, misbehaviour detection and proof verification of counterparty state.
 - [`ClientMessage`](#clientmessage) used for submitting block headers for client updates and submission of misbehaviour evidence using conflicting headers.
@@ -34,6 +35,9 @@ A light client module developer should be concerned with three main interfaces:
 Throughout this guide the `07-tendermint` light client module may be referred to as a reference example.
 
 ## Concepts and vocabulary
+
+### `LightClientModule`
+
 
 ### `ClientState`
 

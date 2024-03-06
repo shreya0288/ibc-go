@@ -1,10 +1,9 @@
 ---
 title: Client State interface
 sidebar_label: Client State interface
-sidebar_position: 2
+sidebar_position: 3
 slug: /ibc/light-clients/client-state
 ---
-
 
 # Implementing the `ClientState` interface
 

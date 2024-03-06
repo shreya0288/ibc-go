@@ -1,10 +1,9 @@
 ---
 title: Consensus State interface
 sidebar_label: Consensus State interface
-sidebar_position: 3
+sidebar_position: 4
 slug: /ibc/light-clients/consensus-state
 ---
-
 
 # Implementing the `ConsensusState` interface
 
@@ -20,7 +19,7 @@ This is the type of client consensus. It should be the same as the `ClientType` 
 
 ## `GetTimestamp` method
 
-*Deprecated*: soon to be removed from interface
+*Deprecated*: soon to be removed from interface.
 
 `GetTimestamp` should return the timestamp (in nanoseconds) of the consensus state snapshot.
 

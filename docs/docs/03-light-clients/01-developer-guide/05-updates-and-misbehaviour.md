@@ -1,10 +1,9 @@
 ---
 title: Handling Updates and Misbehaviour
 sidebar_label: Handling Updates and Misbehaviour
-sidebar_position: 4
+sidebar_position: 5
 slug: /ibc/light-clients/updates-and-misbehaviour
 ---
-
 
 # Handling `ClientMessage`s: updates and misbehaviour
 
