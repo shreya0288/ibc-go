@@ -594,12 +594,11 @@ func newDefaultSimappConfig(cc ChainConfig, name, chainID, denom string, cometCf
 // getGenesisModificationFunction returns a genesis modification function that handles the GenesisState type
 // correctly depending on if the govv1beta1 gov module is used or if govv1 is being used.
 func getGenesisModificationFunction(cc ChainConfig) func(ibc.ChainConfig, []byte) ([]byte, error) {
-	binary := cc.Binary
 	version := cc.Tag
 
-	simdSupportsGovV1Genesis := binary == defaultBinary && testvalues.GovGenesisFeatureReleases.IsSupported(version)
+	supportsGovV1Genesis := testvalues.GovGenesisFeatureReleases.IsSupported(version)
 
-	if simdSupportsGovV1Genesis {
+	if supportsGovV1Genesis {
 		return defaultGovv1ModifyGenesis(version)
 	}
 
