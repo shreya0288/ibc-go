@@ -9,11 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/strangelove-ventures/interchaintest/v8"
-	"github.com/strangelove-ventures/interchaintest/v8/ibc"
-	interchaintestutil "github.com/strangelove-ventures/interchaintest/v8/testutil"
-	"gopkg.in/yaml.v2"
-
+	cmtjson "github.com/cometbft/cometbft/libs/json"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module/testutil"
@@ -21,8 +17,10 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	govv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 	govv1beta1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
-
-	cmtjson "github.com/cometbft/cometbft/libs/json"
+	"github.com/strangelove-ventures/interchaintest/v8"
+	"github.com/strangelove-ventures/interchaintest/v8/ibc"
+	interchaintestutil "github.com/strangelove-ventures/interchaintest/v8/testutil"
+	"gopkg.in/yaml.v2"
 
 	"github.com/cosmos/ibc-go/e2e/relayer"
 	"github.com/cosmos/ibc-go/e2e/semverutil"
@@ -46,13 +44,14 @@ const (
 	RelayerIDEnv = "RELAYER_ID"
 	// ChainBinaryEnv binary is the binary that will be used for both chains.
 	ChainBinaryEnv = "CHAIN_BINARY"
+	// Bech32PrefixEnv specifies the beck32 prefix to use for the chains. Defaults to "cosmos" if not specified.
+	Bech32PrefixEnv = "BECH32_PREFIX"
 	// ChainUpgradeTagEnv specifies the upgrade version tag
 	ChainUpgradeTagEnv = "CHAIN_UPGRADE_TAG"
 	// ChainUpgradePlanEnv specifies the upgrade plan name
 	ChainUpgradePlanEnv = "CHAIN_UPGRADE_PLAN"
 	// E2EConfigFilePathEnv allows you to specify a custom path for the config file to be used.
 	E2EConfigFilePathEnv = "E2E_CONFIG_PATH"
-
 	// defaultBinary is the default binary that will be used by the chains.
 	defaultBinary = "simd"
 	// defaultRlyTag is the tag that will be used if no relayer tag is specified.
@@ -124,6 +123,9 @@ func (tc TestConfig) validateChains() error {
 		}
 		if cfg.Tag == "" {
 			return fmt.Errorf("chain config missing tag: %+v", cfg)
+		}
+		if cfg.Bech32Prefix == "" {
+			return fmt.Errorf("chain config missing bech32Prefix: %+v", cfg)
 		}
 
 		// TODO: validate chainID in https://github.com/cosmos/ibc-go/issues/4697
@@ -274,6 +276,7 @@ type ChainConfig struct {
 	Binary        string `yaml:"binary"`
 	NumValidators int    `yaml:"numValidators"`
 	NumFullNodes  int    `yaml:"numFullNodes"`
+	Bech32Prefix  string `yaml:"bech32Prefix"`
 }
 
 type CometBFTConfig struct {
@@ -372,6 +375,12 @@ func applyEnvironmentVariableOverrides(fromFile TestConfig) TestConfig {
 		fromFile.UpgradeConfig.Tag = envTc.UpgradeConfig.Tag
 	}
 
+	if os.Getenv(Bech32PrefixEnv) != "" {
+		for i := range fromFile.ChainConfigs {
+			fromFile.ChainConfigs[i].Bech32Prefix = envTc.ChainConfigs[i].Bech32Prefix
+		}
+	}
+
 	return fromFile
 }
 
@@ -419,6 +428,11 @@ func getChainConfigsFromEnv() []ChainConfig {
 	numValidators := 4
 	numFullNodes := 1
 
+	prefix, ok := os.LookupEnv(Bech32PrefixEnv)
+	if !ok {
+		prefix = "cosmos"
+	}
+
 	chainBImage := chainAImage
 	return []ChainConfig{
 		{
@@ -427,6 +441,7 @@ func getChainConfigsFromEnv() []ChainConfig {
 			Binary:        chainBinary,
 			NumValidators: numValidators,
 			NumFullNodes:  numFullNodes,
+			Bech32Prefix:  prefix,
 		},
 		{
 			Image:         chainBImage,
@@ -434,6 +449,7 @@ func getChainConfigsFromEnv() []ChainConfig {
 			Binary:        chainBinary,
 			NumValidators: numValidators,
 			NumFullNodes:  numFullNodes,
+			Bech32Prefix:  prefix,
 		},
 	}
 }
@@ -578,7 +594,7 @@ func newDefaultSimappConfig(cc ChainConfig, name, chainID, denom string, cometCf
 			},
 		},
 		Bin:                 cc.Binary,
-		Bech32Prefix:        "cosmos",
+		Bech32Prefix:        cc.Bech32Prefix,
 		CoinType:            fmt.Sprint(sdk.GetConfig().GetCoinType()),
 		Denom:               denom,
 		EncodingConfig:      SDKEncodingConfig(),

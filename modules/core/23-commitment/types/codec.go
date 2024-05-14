@@ -13,7 +13,7 @@ func RegisterInterfaces(registry codectypes.InterfaceRegistry) {
 		(*exported.Root)(nil),
 	)
 	registry.RegisterInterface(
-		"ibc.core.commitment.v1.Prefix",
+		"ibc.core.commitment.v1.Bech32Prefix",
 		(*exported.Prefix)(nil),
 	)
 	registry.RegisterInterface(

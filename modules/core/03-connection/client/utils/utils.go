@@ -182,7 +182,7 @@ func ParseClientState(cdc *codec.LegacyAmino, arg string) (exported.ClientState,
 }
 
 // ParsePrefix unmarshals an cmd input argument from a JSON string to a commitment
-// Prefix. If the input is not a JSON, it looks for a path to the JSON file.
+// Bech32Prefix. If the input is not a JSON, it looks for a path to the JSON file.
 func ParsePrefix(cdc *codec.LegacyAmino, arg string) (commitmenttypes.MerklePrefix, error) {
 	var prefix commitmenttypes.MerklePrefix
 	if err := cdc.UnmarshalJSON([]byte(arg), &prefix); err != nil {
