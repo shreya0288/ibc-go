@@ -44,7 +44,7 @@ func (Keeper) Logger(ctx sdk.Context) log.Logger {
 }
 
 // GetCommitmentPrefix returns the IBC connection store prefix as a commitment
-// Bech32Prefix
+// Prefix
 func (k *Keeper) GetCommitmentPrefix() exported.Prefix {
 	return commitmenttypes.NewMerklePrefix([]byte(k.storeKey.Name()))
 }
