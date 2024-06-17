@@ -11,7 +11,7 @@ slug: /ibc/channel-upgrades
 Learn how to upgrade existing IBC channels.
 :::
 
-Channel upgradability is an IBC-level protocol that allows chains to leverage new application and channel features without having to create new channels or perform a network-wide upgrade. 
+Channel upgradability is an IBC-level protocol that allows chains to leverage new application and channel features without having to create new channels or perform a network-wide upgrade.
 
 Prior to this feature, developers who wanted to update an application module or add a middleware to their application flow would need to create a new channel in order to use the updated application feature/middleware, resulting in a loss of the accumulated state/liquidity, token fungibility (as the channel ID is encoded in the IBC denom), and any other larger network effects of losing usage of the existing channel from relayers monitoring, etc.
 
@@ -25,20 +25,20 @@ Channel upgrades will be achieved using a handshake process that is designed to 
 
 ```go
 type Channel struct {
-  // current state of the channel end
-  State State `protobuf:"varint,1,opt,name=state,proto3,enum=ibc.core.channel.v1.State" json:"state,omitempty"`
-  // whether the channel is ordered or unordered
-  Ordering Order `protobuf:"varint,2,opt,name=ordering,proto3,enum=ibc.core.channel.v1.Order" json:"ordering,omitempty"`
-  // counterparty channel end
-  Counterparty Counterparty `protobuf:"bytes,3,opt,name=counterparty,proto3" json:"counterparty"`
-  // list of connection identifiers, in order, along which packets sent on
-  // this channel will travel
-  ConnectionHops []string `protobuf:"bytes,4,rep,name=connection_hops,json=connectionHops,proto3" json:"connection_hops,omitempty"`
-  // opaque channel version, which is agreed upon during the handshake
-  Version string `protobuf:"bytes,5,opt,name=version,proto3" json:"version,omitempty"`
-  // upgrade sequence indicates the latest upgrade attempt performed by this channel
-  // the value of 0 indicates the channel has never been upgraded
-  UpgradeSequence uint64 `protobuf:"varint,6,opt,name=upgrade_sequence,json=upgradeSequence,proto3" json:"upgrade_sequence,omitempty"`
+// current state of the channel end
+State State `protobuf:"varint,1,opt,name=state,proto3,enum=ibc.core.channel.v1.State" json:"state,omitempty"`
+// whether the channel is ordered or unordered
+Ordering Order `protobuf:"varint,2,opt,name=ordering,proto3,enum=ibc.core.channel.v1.Order" json:"ordering,omitempty"`
+// counterparty channel end
+Counterparty Counterparty `protobuf:"bytes,3,opt,name=counterparty,proto3" json:"counterparty"`
+// list of connection identifiers, in order, along which packets sent on
+// this channel will travel
+ConnectionHops []string `protobuf:"bytes,4,rep,name=connection_hops,json=connectionHops,proto3" json:"connection_hops,omitempty"`
+// opaque channel version, which is agreed upon during the handshake
+Version string `protobuf:"bytes,5,opt,name=version,proto3" json:"version,omitempty"`
+// upgrade sequence indicates the latest upgrade attempt performed by this channel
+// the value of 0 indicates the channel has never been upgraded
+UpgradeSequence uint64 `protobuf:"varint,6,opt,name=upgrade_sequence,json=upgradeSequence,proto3" json:"upgrade_sequence,omitempty"`
 }
 ```
 
@@ -48,21 +48,21 @@ On a high level, successful handshake process for channel upgrades works as foll
 
 1. The chain initiating the upgrade process will propose an upgrade.
 2. If the counterparty agrees with the proposal, it will block sends and begin flushing any in-flight packets on its channel end. This flushing process will be covered in more detail below.
-3. Upon successful completion of the previous step, the initiating chain will also block packet sends and begin flushing any in-flight packets on its channel end. 
-4. Once both channel ends have completed flushing packets within the upgrade timeout window, both channel ends can be opened and upgraded to the new channel fields. 
+3. Upon successful completion of the previous step, the initiating chain will also block packet sends and begin flushing any in-flight packets on its channel end.
+4. Once both channel ends have completed flushing packets within the upgrade timeout window, both channel ends can be opened and upgraded to the new channel fields.
 
 Each handshake step will be documented below in greater detail.
 
 ## Initializing a Channel Upgrade
 
-A channel upgrade is initialised by submitting the `MsgChannelUpgradeInit` message, which can be submitted only by the chain itself upon governance authorization. It is possible to upgrade the channel ordering, the channel connection hops, and the channel version, which can be found in the `UpgradeFields`. 
+A channel upgrade is initialised by submitting the `MsgChannelUpgradeInit` message, which can be submitted only by the chain itself upon governance authorization. It is possible to upgrade the channel ordering, the channel connection hops, and the channel version, which can be found in the `UpgradeFields`.
 
 ```go
 type MsgChannelUpgradeInit struct {
-  PortId    string
-  ChannelId string
-  Fields    UpgradeFields
-  Signer    string
+PortId    string
+ChannelId string
+Fields    UpgradeFields
+Signer    string
 }
 ```
 
@@ -71,7 +71,7 @@ As part of the handling of the `MsgChannelUpgradeInit` message, the application'
 After this message is handled successfully, the channel's upgrade sequence will be incremented. This upgrade sequence will serve as a nonce for the upgrade process to provide replay protection.
 
 :::warning
-Initiating an upgrade in the same block as opening a channel may potentially prevent the counterparty channel from also opening. 
+Initiating an upgrade in the same block as opening a channel may potentially prevent the counterparty channel from also opening.
 :::
 
 ### Governance gating on `ChanUpgradeInit`
@@ -84,26 +84,26 @@ If chains want to initiate the upgrade of many channels, they will need to submi
 
 `FLUSHING` and `FLUSHCOMPLETE` are additional channel states which have been added to enable the upgrade feature.
 
-These states may consist of: 
+These states may consist of:
 
 ```go
 const (
-  // Default State
-  UNINITIALIZED State = 0
-  // A channel has just started the opening handshake.
-  INIT State = 1
-  // A channel has acknowledged the handshake step on the counterparty chain.
-  TRYOPEN State = 2
-  // A channel has completed the handshake. Open channels are
-  // ready to send and receive packets.
-  OPEN State = 3
-  // A channel has been closed and can no longer be used to send or receive
-  // packets.
-  CLOSED State = 4
-  // A channel has just accepted the upgrade handshake attempt and is flushing in-flight packets.
-  FLUSHING State = 5
-  // A channel has just completed flushing any in-flight packets.
-  FLUSHCOMPLETE State = 6
+// Default State
+UNINITIALIZED State = 0
+// A channel has just started the opening handshake.
+INIT State = 1
+// A channel has acknowledged the handshake step on the counterparty chain.
+TRYOPEN State = 2
+// A channel has completed the handshake. Open channels are
+// ready to send and receive packets.
+OPEN State = 3
+// A channel has been closed and can no longer be used to send or receive
+// packets.
+CLOSED State = 4
+// A channel has just accepted the upgrade handshake attempt and is flushing in-flight packets.
+FLUSHING State = 5
+// A channel has just completed flushing any in-flight packets.
+FLUSHCOMPLETE State = 6
 )
 ```
 
@@ -111,34 +111,34 @@ These are found in `State` on the `Channel` struct:
 
 ```go
 type Channel struct {
-  // current state of the channel end
-  State State `protobuf:"varint,1,opt,name=state,proto3,enum=ibc.core.channel.v1.State" json:"state,omitempty"`
-  // whether the channel is ordered or unordered
-  Ordering Order `protobuf:"varint,2,opt,name=ordering,proto3,enum=ibc.core.channel.v1.Order" json:"ordering,omitempty"`
-  // counterparty channel end
-  Counterparty Counterparty `protobuf:"bytes,3,opt,name=counterparty,proto3" json:"counterparty"`
-  // list of connection identifiers, in order, along which packets sent on
-  // this channel will travel
-  ConnectionHops []string `protobuf:"bytes,4,rep,name=connection_hops,json=connectionHops,proto3" json:"connection_hops,omitempty"`
-  // opaque channel version, which is agreed upon during the handshake
-  Version string `protobuf:"bytes,5,opt,name=version,proto3" json:"version,omitempty"`
-  // upgrade sequence indicates the latest upgrade attempt performed by this channel
-  // the value of 0 indicates the channel has never been upgraded
-  UpgradeSequence uint64 `protobuf:"varint,6,opt,name=upgrade_sequence,json=upgradeSequence,proto3" json:"upgrade_sequence,omitempty"`
+// current state of the channel end
+State State `protobuf:"varint,1,opt,name=state,proto3,enum=ibc.core.channel.v1.State" json:"state,omitempty"`
+// whether the channel is ordered or unordered
+Ordering Order `protobuf:"varint,2,opt,name=ordering,proto3,enum=ibc.core.channel.v1.Order" json:"ordering,omitempty"`
+// counterparty channel end
+Counterparty Counterparty `protobuf:"bytes,3,opt,name=counterparty,proto3" json:"counterparty"`
+// list of connection identifiers, in order, along which packets sent on
+// this channel will travel
+ConnectionHops []string `protobuf:"bytes,4,rep,name=connection_hops,json=connectionHops,proto3" json:"connection_hops,omitempty"`
+// opaque channel version, which is agreed upon during the handshake
+Version string `protobuf:"bytes,5,opt,name=version,proto3" json:"version,omitempty"`
+// upgrade sequence indicates the latest upgrade attempt performed by this channel
+// the value of 0 indicates the channel has never been upgraded
+UpgradeSequence uint64 `protobuf:"varint,6,opt,name=upgrade_sequence,json=upgradeSequence,proto3" json:"upgrade_sequence,omitempty"`
 }
 ```
 
-`startFlushing` is the specific method which is called in `ChanUpgradeTry` and `ChanUpgradeAck` to update the state on the channel end. This will set the timeout on the upgrade and update the channel state to `FLUSHING` which will block the upgrade from continuing until all in-flight packets have been flushed. 
+`startFlushing` is the specific method which is called in `ChanUpgradeTry` and `ChanUpgradeAck` to update the state on the channel end. This will set the timeout on the upgrade and update the channel state to `FLUSHING` which will block the upgrade from continuing until all in-flight packets have been flushed.
 
 This will also set the upgrade timeout for the counterparty (i.e. the timeout before which the counterparty chain must move from `FLUSHING` to `FLUSHCOMPLETE`; if it doesn't then the chain will cancel the upgrade and write an error receipt). The timeout is a relative time duration in nanoseconds that can be changed with `MsgUpdateParams` and by default is 10 minutes.
 
-The state will change to `FLUSHCOMPLETE` once there are no in-flight packets left and the channel end is ready to move to `OPEN`. This flush state will also have an impact on how a channel upgrade can be cancelled, as detailed below.
+The state will change to `FLUSHCOMPLETE` once there are no in-flight packets left and the channel end is ready to move to `OPEN`. This flush state will also have an impact on how a channel ugrade can be cancelled, as detailed below.
 
 All other parameters will remain the same during the upgrade handshake until the upgrade handshake completes. When the channel is reset to `OPEN` on a successful upgrade handshake, the relevant fields on the channel end will be switched over to the `UpgradeFields` specified in the upgrade.
 
 :::note
 
-When transitioning a channel from UNORDERED to ORDERED, new packet sends from the channel end which upgrades first will be incapable of being timed out until the counterparty has finished upgrading. 
+When transitioning a channel from UNORDERED to ORDERED, new packet sends from the channel end which upgrades first will be incapable of being timed out until the counterparty has finished upgrading.
 
 :::
 
@@ -176,9 +176,9 @@ It will then be possible to re-initiate an upgrade by sending a `MsgChannelOpenI
 :::warning
 
 Performing sequentially an upgrade cancellation, upgrade initialization, and another upgrade cancellation in a single block while the counterparty is in `FLUSHCOMPLETE` will lead to corrupted state.
-The counterparty will be unable to cancel its upgrade attempt and will require a manual migration. 
-When the counterparty is in `FLUSHCOMPLETE`, it requires a proof that the counterparty cancelled its current upgrade attempt. 
-When this cancellation is succeeded by an initialization and cancellation in the same block, it results in the proof of cancellation existing only for the next upgrade attempt, not the current. 
+The counterparty will be unable to cancel its upgrade attempt and will require a manual migration.
+When the counterparty is in `FLUSHCOMPLETE`, it requires a proof that the counterparty cancelled its current upgrade attempt.
+When this cancellation is succeeded by an initialization and cancellation in the same block, it results in the proof of cancellation existing only for the next upgrade attempt, not the current.
 
 :::
 
@@ -186,11 +186,11 @@ When this cancellation is succeeded by an initialization and cancellation in the
 
 Timing out an outstanding channel upgrade may be necessary during the flushing packet stage of the channel upgrade process. As stated above, with `ChanUpgradeTry` or `ChanUpgradeAck`, the channel state has been changed from `OPEN` to `FLUSHING`, so no new packets will be allowed to be sent over this channel while flushing. If upgrades cannot be performed in a timely manner (due to unforeseen flushing issues), upgrade timeouts allow the channel to avoid blocking packet sends indefinitely. If flushing exceeds the time limit set in the `UpgradeTimeout` channel `Params`, the upgrade process will need to be timed out to abort the upgrade attempt and resume normal channel processing.
 
-Channel upgrades require setting a valid timeout value in the channel `Params` before submitting a `MsgChannelUpgradeTry` or `MsgChannelUpgradeAck` message (by default, 10 minutes): 
+Channel upgrades require setting a valid timeout value in the channel `Params` before submitting a `MsgChannelUpgradeTry` or `MsgChannelUpgradeAck` message (by default, 10 minutes):
 
 ```go
 type Params struct {
-  UpgradeTimeout Timeout 
+UpgradeTimeout Timeout
 }
 ```
 
@@ -198,10 +198,10 @@ A valid Timeout contains either one or both of a timestamp and block height (seq
 
 ```go
 type Timeout struct {
-  // block height after which the packet or upgrade times out
-  Height types.Height
-  // block timestamp (in nanoseconds) after which the packet or upgrade times out
-  Timestamp uint64
+// block height after which the packet or upgrade times out
+Height types.Height
+// block timestamp (in nanoseconds) after which the packet or upgrade times out
+Timestamp uint64
 }
 ```
 
@@ -209,9 +209,9 @@ This timeout will then be set as a field on the `Upgrade` struct itself when flu
 
 ```go
 type Upgrade struct {
-  Fields           UpgradeFields 
-  Timeout          Timeout       
-  NextSequenceSend uint64        
+Fields           UpgradeFields
+Timeout          Timeout
+NextSequenceSend uint64
 }
 ```
 
@@ -219,12 +219,12 @@ If the timeout has been exceeded during flushing, a chain can then submit the `M
 
 ```go
 type MsgChannelUpgradeTimeout struct {
-  PortId              string    
-  ChannelId           string
-  CounterpartyChannel Channel 
-  ProofChannel        []byte
-  ProofHeight         types.Height
-  Signer              string 
+PortId              string
+ChannelId           string
+CounterpartyChannel Channel
+ProofChannel        []byte
+ProofHeight         types.Height
+Signer              string
 }
 ```
 
@@ -278,7 +278,7 @@ should be aware that callbacks will be invoked before any core ibc state changes
 
 > IBC applications should not attempt to process any packet data under the new conditions until after `OnChanUpgradeOpen`
 > has been executed, as up until this point it is still possible for the upgrade handshake to fail and for the channel
-> to remain in the pre-upgraded state. 
+> to remain in the pre-upgraded state.
 
 ## Upgrade an existing transfer application stack to use 29-fee middleware
 
@@ -289,38 +289,38 @@ In app.go, the existing transfer stack must be wrapped with the fee middleware.
 ```golang
 
 import (
-  // ... 
-  ibcfee "github.com/cosmos/ibc-go/v8/modules/apps/29-fee"
-  ibctransferkeeper "github.com/cosmos/ibc-go/v8/modules/apps/transfer/keeper"
-  transfer "github.com/cosmos/ibc-go/v8/modules/apps/transfer"
-  porttypes "github.com/cosmos/ibc-go/v8/modules/core/05-port/types"
-  // ...
+// ... 
+ibcfee "github.com/cosmos/ibc-go/v8/modules/apps/29-fee"
+ibctransferkeeper "github.com/cosmos/ibc-go/v8/modules/apps/transfer/keeper"
+transfer "github.com/cosmos/ibc-go/v8/modules/apps/transfer"
+porttypes "github.com/cosmos/ibc-go/v8/modules/core/05-port/types"
+// ...
 )
 
 type App struct {
-  // ...
-  TransferKeeper        ibctransferkeeper.Keeper
-  IBCFeeKeeper          ibcfeekeeper.Keeper
-  // ..
+// ...
+TransferKeeper        ibctransferkeeper.Keeper
+IBCFeeKeeper          ibcfeekeeper.Keeper
+// ..
 }
 
 // ...
 
 app.IBCFeeKeeper = ibcfeekeeper.NewKeeper(
-  appCodec, keys[ibcfeetypes.StoreKey],
-  app.IBCKeeper.ChannelKeeper, // may be replaced with IBC middleware
-  app.IBCKeeper.ChannelKeeper,
-  app.IBCKeeper.PortKeeper, app.AccountKeeper, app.BankKeeper,
+appCodec, keys[ibcfeetypes.StoreKey],
+app.IBCKeeper.ChannelKeeper, // may be replaced with IBC middleware
+app.IBCKeeper.ChannelKeeper,
+app.IBCKeeper.PortKeeper, app.AccountKeeper, app.BankKeeper,
 )
 
 // Create Transfer Keeper and pass IBCFeeKeeper as expected Channel and PortKeeper
 // since fee middleware will wrap the IBCKeeper for underlying application.
 app.TransferKeeper = ibctransferkeeper.NewKeeper(
-  appCodec, keys[ibctransfertypes.StoreKey], app.GetSubspace(ibctransfertypes.ModuleName),
-  app.IBCFeeKeeper, // ISC4 Wrapper: fee IBC middleware
-  app.IBCKeeper.ChannelKeeper, app.IBCKeeper.PortKeeper,
-  app.AccountKeeper, app.BankKeeper, scopedTransferKeeper,
-  authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+appCodec, keys[ibctransfertypes.StoreKey], app.GetSubspace(ibctransfertypes.ModuleName),
+app.IBCFeeKeeper, // ISC4 Wrapper: fee IBC middleware
+app.IBCKeeper.ChannelKeeper, app.IBCKeeper.PortKeeper,
+app.AccountKeeper, app.BankKeeper, scopedTransferKeeper,
+authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 )
 
 
@@ -379,13 +379,13 @@ simd tx submit-proposal proposal.json --from <key_or_address>
 ## Upgrading channels with the CLI
 
 A new cli has been added which enables either
-    - submitting a governance proposal which contains a `MsgChannelUpgradeInit` for every channel to be upgraded.
-    - generating a `proposal.json` file which contains the proposal contents to be edited/submitted at a later date.
+- submitting a governance proposal which contains a `MsgChannelUpgradeInit` for every channel to be upgraded.
+- generating a `proposal.json` file which contains the proposal contents to be edited/submitted at a later date.
 
 The following example, would submit a governance proposal with the specified deposit, title and summary which would
 contain a `MsgChannelUpgradeInit` for all `OPEN` channels whose port matches the regular expression `transfer`.
 
-> Note: by adding the `--json` flag, the command would instead output the contents of the proposal which could be 
+> Note: by adding the `--json` flag, the command would instead output the contents of the proposal which could be
 > stored in a `proposal.json` file to be edited and submitted at a later date.
 
 ```bash
@@ -396,7 +396,7 @@ simd tx ibc channel upgrade-channels "{\"fee_version\":\"ics29-1\",\"app_version
   --port-pattern "transfer"
 ```
 
-It is also possible to explicitly list a comma separated string of channel IDs. It is important to note that the 
+It is also possible to explicitly list a comma separated string of channel IDs. It is important to note that the
 regular expression matching specified by `--port-pattern` (which defaults to `transfer`) still applies.
 
 For example the following command would generate the contents of a `proposal.json` file which would attempt to upgrade

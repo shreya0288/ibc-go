@@ -21,22 +21,22 @@ Layer0 process.
 In order to export IBC outside of Tendermint-based ecosystems, there is a need to introduce new light clients. This is a core need for
 companies and protocols trying to bridge ecosystems such as Ethereum, NEAR, Polkadot, etc. as none of these uses Tendermint as their
 consensus mechanism. Introducing a new light client implementation is not straightforward: sometimes cryptographic primitives are not
-available, or support for operating with certain data structures (like specific tries/trees, etc) are not available in Go. The implementer needs to follow 
+available, or support for operating with certain data structures (like specific tries/trees, etc) are not available in Go. The implementor needs to follow
 the light client's specification, and will try to make use of all available tools to keep the development cost reasonable.
 
 Normally, most of available tools to implement a light client stem from the blockchain ecosystem this client belongs to. Say for example, if a developer
 wants to implement the Polkadot finality gadget called GRANDPA, she will find that most of the tools are available on Substrate. Hence, being able to have a way
 to let developers implement these light clients using the best and most accessible tools for the job is very beneficial, as it avoids having to re-implement
 features that are otherwise available and likely heavily audited already. And since Wasm is a well supported target that most programming languages support,
-it becomes a proper solution to port the code for ibc-go to interpret without requiring the entire light client being written using Go. 
+it becomes a proper solution to port the code for ibc-go to interpret without requiring the entire light client being written using Go.
 
 ## Objectives
 
-The objective of this module is to have allow two chains with heterogeneous consensus algorithms being connected through light clients that are not necessarily written in Go, but compiled to Wasm instead.
+The objective of this module is to have allow two chains with heterogenous consensus algorithms being connected through light clients that are not necessarily written in Go, but compiled to Wasm instead.
 
 ## Scope
 
-The scope of this feature is to allow any implementation written in Wasm to be compliant with the interface 
+The scope of this feature is to allow any implementation written in Wasm to be compliant with the interface
 expressed in [02-client `ClientState` interface](https://github.com/cosmos/ibc-go/blob/main/modules/core/exported/client.go#L44-L139).
 
 | Features               | Release |
@@ -98,13 +98,13 @@ The first use case that this module will enable is the connection between GRANDP
 | 4.02 | When a contract bytecode is stored it should also be pinned the wasm VM in-memory cache. | See [here](https://github.com/cosmos/ibc-go/blob/modules/light-clients/08-wasm/v0.1.0%2Bibc-go-v8.0-wasmvm-v1.5/modules/light-clients/08-wasm/keeper/keeper.go#L148). | `Verified` | v0.1.0 |
 | 4.03 | The size in bytes of bytecode of the light client Wasm contract must be > 0 and <= 3 MiB. | See validation [here](https://github.com/cosmos/ibc-go/blob/modules/light-clients/08-wasm/v0.1.0%2Bibc-go-v8.0-wasmvm-v1.5/modules/light-clients/08-wasm/types/validation.go#L20). | `Verified` | v0.1.0 |
 
-## 5 - Memory 
+## 5 - Memory
 
 | ID | Description | Verification | Status | Release |
 | -- | ----------- | ------------ | ------ | ------- |
 | 5.01 | Each contract execution memory limit is 32 MiB. | See [here](https://github.com/cosmos/ibc-go/blob/modules/light-clients/08-wasm/v0.1.0%2Bibc-go-v8.0-wasmvm-v1.5/modules/light-clients/08-wasm/types/config.go#L8). | `Verified` | v0.1.0 | 
 
-## 6 - Security 
+## 6 - Security
 
 | ID | Description | Verification | Status | Release |
 | -- | ----------- | ------------ | ------ | ------- |
