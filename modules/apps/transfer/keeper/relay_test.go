@@ -31,6 +31,7 @@ func (suite *KeeperTestSuite) TestSendTransfer() {
 		timeoutHeight   clienttypes.Height
 		memo            string
 		expEscrowAmount sdkmath.Int // total amount in escrow for denom on receiving chain
+
 	)
 
 	testCases := []struct {
@@ -158,7 +159,7 @@ func (suite *KeeperTestSuite) TestSendTransfer() {
 			expEscrowAmount = sdkmath.ZeroInt()
 
 			// create IBC token on chainA
-			transferMsg := types.NewMsgTransfer(path.EndpointB.ChannelConfig.PortID, path.EndpointB.ChannelID, sdk.NewCoins(coin), suite.chainB.SenderAccount.GetAddress().String(), suite.chainA.SenderAccount.GetAddress().String(), suite.chainA.GetTimeoutHeight(), 0, "")
+			transferMsg := types.NewMsgTransfer(path.EndpointB.ChannelConfig.PortID, path.EndpointB.ChannelID, sdk.NewCoins(coin), suite.chainB.SenderAccount.GetAddress().String(), suite.chainA.SenderAccount.GetAddress().String(), suite.chainA.GetTimeoutHeight(), 0, "", nil)
 			result, err := suite.chainB.SendMsgs(transferMsg)
 			suite.Require().NoError(err) // message committed
 
@@ -178,6 +179,7 @@ func (suite *KeeperTestSuite) TestSendTransfer() {
 				suite.chainB.SenderAccount.GetAddress().String(),
 				timeoutHeight, 0, // only use timeout height
 				memo,
+				nil,
 			)
 
 			res, err := suite.chainA.GetSimApp().TransferKeeper.Transfer(suite.chainA.GetContext(), msg)
@@ -246,6 +248,7 @@ func (suite *KeeperTestSuite) TestSendTransferSetsTotalEscrowAmountForSourceIBCT
 		suite.chainA.SenderAccount.GetAddress().String(),
 		suite.chainB.SenderAccount.GetAddress().String(),
 		suite.chainB.GetTimeoutHeight(), 0, "",
+		nil,
 	)
 	result, err := suite.chainA.SendMsgs(transferMsg)
 	suite.Require().NoError(err) // message committed
@@ -266,6 +269,7 @@ func (suite *KeeperTestSuite) TestSendTransferSetsTotalEscrowAmountForSourceIBCT
 		suite.chainB.SenderAccount.GetAddress().String(),
 		suite.chainA.SenderAccount.GetAddress().String(),
 		suite.chainA.GetTimeoutHeight(), 0, "",
+		nil,
 	)
 
 	res, err := suite.chainB.GetSimApp().TransferKeeper.Transfer(suite.chainB.GetContext(), msg)
@@ -364,7 +368,7 @@ func (suite *KeeperTestSuite) TestOnRecvPacket_ReceiverIsNotSource() {
 
 			// send coin from chainA to chainB
 			coin := sdk.NewCoin(sdk.DefaultBondDenom, amount)
-			transferMsg := types.NewMsgTransfer(path.EndpointA.ChannelConfig.PortID, path.EndpointA.ChannelID, sdk.NewCoins(coin), suite.chainA.SenderAccount.GetAddress().String(), receiver, clienttypes.NewHeight(1, 110), 0, memo)
+			transferMsg := types.NewMsgTransfer(path.EndpointA.ChannelConfig.PortID, path.EndpointA.ChannelID, sdk.NewCoins(coin), suite.chainA.SenderAccount.GetAddress().String(), receiver, clienttypes.NewHeight(1, 110), 0, memo, nil)
 			_, err := suite.chainA.SendMsgs(transferMsg)
 			suite.Require().NoError(err) // message committed
 
@@ -377,7 +381,7 @@ func (suite *KeeperTestSuite) TestOnRecvPacket_ReceiverIsNotSource() {
 						Denom:  types.NewDenom(sdk.DefaultBondDenom, []types.Trace{}...),
 						Amount: amount.String(),
 					},
-				}, suite.chainA.SenderAccount.GetAddress().String(), receiver, memo)
+				}, suite.chainA.SenderAccount.GetAddress().String(), receiver, memo, nil)
 			packet := channeltypes.NewPacket(data.GetBytes(), seq, path.EndpointA.ChannelConfig.PortID, path.EndpointA.ChannelID, path.EndpointB.ChannelConfig.PortID, path.EndpointB.ChannelID, clienttypes.NewHeight(1, 100), 0)
 
 			err = suite.chainB.GetSimApp().TransferKeeper.OnRecvPacket(suite.chainB.GetContext(), packet, data)
@@ -499,7 +503,7 @@ func (suite *KeeperTestSuite) TestOnRecvPacket_ReceiverIsSource() {
 
 			// send coin from chainB to chainA, receive them, acknowledge them
 			coin := sdk.NewCoin(sdk.DefaultBondDenom, sdkmath.NewInt(100))
-			transferMsg := types.NewMsgTransfer(path.EndpointB.ChannelConfig.PortID, path.EndpointB.ChannelID, sdk.NewCoins(coin), suite.chainB.SenderAccount.GetAddress().String(), suite.chainA.SenderAccount.GetAddress().String(), clienttypes.NewHeight(1, 110), 0, memo)
+			transferMsg := types.NewMsgTransfer(path.EndpointB.ChannelConfig.PortID, path.EndpointB.ChannelID, sdk.NewCoins(coin), suite.chainB.SenderAccount.GetAddress().String(), suite.chainA.SenderAccount.GetAddress().String(), clienttypes.NewHeight(1, 110), 0, memo, nil)
 			res, err := suite.chainB.SendMsgs(transferMsg)
 			suite.Require().NoError(err) // message committed
 
@@ -516,7 +520,7 @@ func (suite *KeeperTestSuite) TestOnRecvPacket_ReceiverIsSource() {
 
 			// send coin back from chainA to chainB
 			coin = sdk.NewCoin(denom.IBCDenom(), amount)
-			transferMsg = types.NewMsgTransfer(path.EndpointA.ChannelConfig.PortID, path.EndpointA.ChannelID, sdk.NewCoins(coin), suite.chainA.SenderAccount.GetAddress().String(), receiver, clienttypes.NewHeight(1, 110), 0, memo)
+			transferMsg = types.NewMsgTransfer(path.EndpointA.ChannelConfig.PortID, path.EndpointA.ChannelID, sdk.NewCoins(coin), suite.chainA.SenderAccount.GetAddress().String(), receiver, clienttypes.NewHeight(1, 110), 0, memo, nil)
 			_, err = suite.chainA.SendMsgs(transferMsg)
 			suite.Require().NoError(err) // message committed
 
@@ -528,7 +532,7 @@ func (suite *KeeperTestSuite) TestOnRecvPacket_ReceiverIsSource() {
 						Denom:  denom,
 						Amount: amount.String(),
 					},
-				}, suite.chainA.SenderAccount.GetAddress().String(), receiver, memo)
+				}, suite.chainA.SenderAccount.GetAddress().String(), receiver, memo, nil)
 			packet = channeltypes.NewPacket(data.GetBytes(), seq, path.EndpointA.ChannelConfig.PortID, path.EndpointA.ChannelID, path.EndpointB.ChannelConfig.PortID, path.EndpointB.ChannelID, clienttypes.NewHeight(1, 100), 0)
 
 			err = suite.chainB.GetSimApp().TransferKeeper.OnRecvPacket(suite.chainB.GetContext(), packet, data)
@@ -606,8 +610,7 @@ func (suite *KeeperTestSuite) TestOnRecvPacketSetsTotalEscrowAmountForSourceIBCT
 				Denom:  denom,
 				Amount: amount.String(),
 			},
-		}, suite.chainA.SenderAccount.GetAddress().String(), suite.chainB.SenderAccount.GetAddress().String(), "")
-
+		}, suite.chainA.SenderAccount.GetAddress().String(), suite.chainB.SenderAccount.GetAddress().String(), "", nil)
 	packet := channeltypes.NewPacket(
 		data.GetBytes(),
 		seq,
@@ -738,7 +741,7 @@ func (suite *KeeperTestSuite) TestOnAcknowledgementPacket() {
 						Denom:  denom,
 						Amount: amount.String(),
 					},
-				}, suite.chainA.SenderAccount.GetAddress().String(), suite.chainB.SenderAccount.GetAddress().String(), "")
+				}, suite.chainA.SenderAccount.GetAddress().String(), suite.chainB.SenderAccount.GetAddress().String(), "", nil)
 			packet := channeltypes.NewPacket(data.GetBytes(), 1, path.EndpointA.ChannelConfig.PortID, path.EndpointA.ChannelID, path.EndpointB.ChannelConfig.PortID, path.EndpointB.ChannelID, clienttypes.NewHeight(1, 100), 0)
 			preAcknowledgementBalance := suite.chainA.GetSimApp().BankKeeper.GetBalance(suite.chainA.GetContext(), suite.chainA.SenderAccount.GetAddress(), denom.IBCDenom())
 
@@ -833,6 +836,7 @@ func (suite *KeeperTestSuite) TestOnAcknowledgementPacketSetsTotalEscrowAmountFo
 		suite.chainB.SenderAccount.GetAddress().String(),
 		suite.chainA.SenderAccount.GetAddress().String(),
 		"",
+		nil,
 	)
 	packet := channeltypes.NewPacket(
 		data.GetBytes(),
@@ -972,7 +976,7 @@ func (suite *KeeperTestSuite) TestOnTimeoutPacket() {
 						Denom:  denom,
 						Amount: amount,
 					},
-				}, sender, suite.chainB.SenderAccount.GetAddress().String(), "")
+				}, sender, suite.chainB.SenderAccount.GetAddress().String(), "", nil)
 			packet := channeltypes.NewPacket(data.GetBytes(), 1, path.EndpointA.ChannelConfig.PortID, path.EndpointA.ChannelID, path.EndpointB.ChannelConfig.PortID, path.EndpointB.ChannelID, clienttypes.NewHeight(1, 100), 0)
 			preTimeoutBalance := suite.chainA.GetSimApp().BankKeeper.GetBalance(suite.chainA.GetContext(), suite.chainA.SenderAccount.GetAddress(), denom.IBCDenom())
 
@@ -1058,7 +1062,7 @@ func (suite *KeeperTestSuite) TestOnTimeoutPacketSetsTotalEscrowAmountForSourceI
 				Denom:  denom,
 				Amount: amount.String(),
 			},
-		}, suite.chainB.SenderAccount.GetAddress().String(), suite.chainA.SenderAccount.GetAddress().String(), "")
+		}, suite.chainB.SenderAccount.GetAddress().String(), suite.chainA.SenderAccount.GetAddress().String(), "", nil)
 	packet := channeltypes.NewPacket(
 		data.GetBytes(),
 		seq,
@@ -1265,7 +1269,7 @@ func (suite *KeeperTestSuite) TestCreatePacketDataBytesFromVersion() {
 			types.V2,
 			func() {},
 			func(bz []byte) {
-				expPacketData := types.NewFungibleTokenPacketDataV2(types.Tokens{types.Token{}}, "", "", "")
+				expPacketData := types.NewFungibleTokenPacketDataV2(types.Tokens{types.Token{}}, "", "", "", nil)
 				suite.Require().Equal(bz, expPacketData.GetBytes())
 			},
 			nil,
@@ -1295,7 +1299,7 @@ func (suite *KeeperTestSuite) TestCreatePacketDataBytesFromVersion() {
 			tc.malleate()
 
 			createFunc := func() {
-				bz = transferkeeper.CreatePacketDataBytesFromVersion(tc.appVersion, "", "", "", tokens)
+				bz = transferkeeper.CreatePacketDataBytesFromVersion(tc.appVersion, "", "", "", tokens, nil)
 			}
 
 			expPanic := tc.expPanicErr != nil
