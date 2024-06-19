@@ -141,7 +141,7 @@ func (k Keeper) RecvPacket(
 	// create key/value pair for proof verification by appending the ICS24 path to the last element of the counterparty merklepath
 
 	// TODO: allow for custom prefix
-	path := commitmenttypes.NewMerklePath(host.PacketCommitmentPath(packet.SourcePort, packet.SourceChannel, packet.Sequence))
+	path := commitmenttypes.NewMerklePath([]byte(host.PacketCommitmentPath(packet.SourcePort, packet.SourceChannel, packet.Sequence)))
 	merklePath, err := commitmenttypes.ApplyPrefix(counterparty.MerklePathPrefix, path)
 	if err != nil {
 		return err
@@ -245,7 +245,7 @@ func (k Keeper) AcknowledgePacket(
 		return errorsmod.Wrapf(channeltypes.ErrInvalidPacket, "commitment bytes are not equal: got (%v), expected (%v)", packetCommitment, commitment)
 	}
 
-	path := commitmenttypes.NewMerklePath(host.PacketAcknowledgementPath(packet.DestinationPort, packet.DestinationChannel, packet.Sequence))
+	path := commitmenttypes.NewMerklePath([]byte(host.PacketAcknowledgementPath(packet.DestinationPort, packet.DestinationChannel, packet.Sequence)))
 	merklePath, err := commitmenttypes.ApplyPrefix(counterparty.MerklePathPrefix, path)
 	if err != nil {
 		return err
@@ -320,7 +320,7 @@ func (k Keeper) TimeoutPacket(
 		return errorsmod.Wrapf(channeltypes.ErrInvalidPacket, "packet commitment bytes are not equal: got (%v), expected (%v)", commitment, packetCommitment)
 	}
 
-	path := commitmenttypes.NewMerklePath(host.PacketReceiptPath(packet.DestinationPort, packet.DestinationChannel, packet.Sequence))
+	path := commitmenttypes.NewMerklePath([]byte(host.PacketReceiptPath(packet.DestinationPort, packet.DestinationChannel, packet.Sequence)))
 	merklePath, err := commitmenttypes.ApplyPrefix(counterparty.MerklePathPrefix, path)
 	if err != nil {
 		return err
