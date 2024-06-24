@@ -334,7 +334,7 @@ func (suite *TypesTestSuite) TestTransferAuthorizationAccept() {
 					{
 						SourcePort:    path.EndpointA.ChannelConfig.PortID,
 						SourceChannel: path.EndpointA.ChannelID,
-						SpendLimit:    ibctesting.TestCoins,
+						SpendLimit:    sdk.NewCoins(ibctesting.TestCoin),
 						AllowList:     []string{ibctesting.TestAccAddress},
 					},
 				},
