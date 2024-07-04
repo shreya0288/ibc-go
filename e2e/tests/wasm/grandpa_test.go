@@ -129,7 +129,7 @@ func (s *GrandpaTestSuite) SetupTest() {
 	cosmosChain, ok := chainB.(*cosmos.CosmosChain)
 	s.Require().True(ok)
 
-	file, err := os.Open("contracts/ics10_grandpa_cw.wasm.gz")
+	file, err := os.Open("contracts/ics10_grandpa_cw_opt.wasm.gz")
 	s.Require().NoError(err)
 
 	cosmosWallet := s.CreateUserOnChainB(ctx, testvalues.StartingTokenAmount)
