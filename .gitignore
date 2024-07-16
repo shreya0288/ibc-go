@@ -60,7 +60,6 @@ dependency-graph.png
 *.history
 
 tmp/
-*.wasm
 # Go
 go.work
 go.work.sum
