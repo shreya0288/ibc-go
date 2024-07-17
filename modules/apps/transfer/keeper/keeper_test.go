@@ -17,7 +17,10 @@ import (
 
 	"github.com/cosmos/ibc-go/v9/modules/apps/transfer/keeper"
 	"github.com/cosmos/ibc-go/v9/modules/apps/transfer/types"
+	clienttypes "github.com/cosmos/ibc-go/v9/modules/core/02-client/types"
+	clienttypes "github.com/cosmos/ibc-go/v9/modules/core/02-client/types"
 	channelkeeper "github.com/cosmos/ibc-go/v9/modules/core/04-channel/keeper"
+	channeltypes "github.com/cosmos/ibc-go/v9/modules/core/04-channel/types"
 	ibctesting "github.com/cosmos/ibc-go/v9/testing"
 )
 
@@ -288,6 +291,36 @@ func (suite *KeeperTestSuite) TestGetAllDenomEscrows() {
 				suite.Require().Empty(denomEscrows)
 			}
 		})
+	}
+}
+
+func (suite *KeeperTestSuite) TestGetAllForwardedPackets() {
+	suite.SetupTest()
+
+	// Store 5 forward packets on transfer/channel-1
+	// Store 5 additional forward packets on transfer/channel-2
+	for _, channelID := range []string{"channel-1", "channel-2"} {
+		for sequence := uint64(1); sequence <= 5; sequence++ {
+			packet := channeltypes.NewPacket(ibctesting.MockPacketData, sequence, ibctesting.TransferPort, channelID, "", "", clienttypes.ZeroHeight(), 0)
+			suite.chainA.GetSimApp().TransferKeeper.SetForwardedPacket(suite.chainA.GetContext(), ibctesting.TransferPort, channelID, sequence, packet)
+		}
+	}
+
+	packets := suite.chainA.GetSimApp().TransferKeeper.GetAllForwardedPackets(suite.chainA.GetContext())
+	// Assert each packets is as expected
+	i := 0
+	for _, channelID := range []string{"channel-1", "channel-2"} {
+		for sequence := uint64(1); sequence <= 5; sequence++ {
+			forwardedPacket := packets[i]
+
+			expForwardKey := channeltypes.NewPacketID(ibctesting.TransferPort, channelID, sequence)
+			suite.Require().Equal(forwardedPacket.ForwardKey, expForwardKey)
+
+			expPacket := channeltypes.NewPacket(ibctesting.MockPacketData, sequence, ibctesting.TransferPort, channelID, "", "", clienttypes.ZeroHeight(), 0)
+			suite.Require().Equal(forwardedPacket.Packet, expPacket)
+
+			i++
+		}
 	}
 }
 

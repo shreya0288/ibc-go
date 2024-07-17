@@ -337,6 +337,38 @@ func (k Keeper) deleteForwardedPacket(ctx sdk.Context, portID, channelID string,
 	store.Delete(packetKey)
 }
 
+// getAllForwardedPackets gets all forward packets stored in state.
+func (k Keeper) getAllForwardedPackets(ctx sdk.Context) []types.ForwardedPacket {
+	var packets []types.ForwardedPacket
+	k.iterateForwardedPackets(ctx, func(packet types.ForwardedPacket) bool {
+		packets = append(packets, packet)
+		return false
+	})
+
+	return packets
+}
+
+// iterateForwardedPackets iterates over the forward packets in the store and performs a callback function.
+func (k Keeper) iterateForwardedPackets(ctx sdk.Context, cb func(packet types.ForwardedPacket) bool) {
+	store := ctx.KVStore(k.storeKey)
+	iterator := storetypes.KVStorePrefixIterator(store, types.ForwardPacketKey)
+
+	defer sdk.LogDeferred(ctx.Logger(), func() error { return iterator.Close() })
+	for ; iterator.Valid(); iterator.Next() {
+		var forwardPacket types.ForwardedPacket
+		k.cdc.MustUnmarshal(iterator.Value(), &forwardPacket.Packet)
+
+		port, channel, sequence := parseForwardKey(iterator.Key())
+		forwardPacket.ForwardKey.Sequence = sequence
+		forwardPacket.ForwardKey.ChannelId = channel
+		forwardPacket.ForwardKey.PortId = port
+
+		if cb(forwardPacket) {
+			break
+		}
+	}
+}
+
 // IsBlockedAddr checks if the given address is allowed to send or receive tokens.
 // The module account is always allowed to send and receive tokens.
 func (k Keeper) isBlockedAddr(addr sdk.AccAddress) bool {
@@ -346,4 +378,23 @@ func (k Keeper) isBlockedAddr(addr sdk.AccAddress) bool {
 	}
 
 	return k.bankKeeper.BlockedAddr(addr)
+}
+
+func parseForwardKey(key []byte) (portID, channelID string, sequence uint64) {
+	path := string(key)
+	parts := strings.Split(path, "/")
+	if len(parts) != 4 {
+		panic(fmt.Errorf("key path should always have 4 elements"))
+	}
+
+	portID, channelID = parts[1], parts[2]
+	if err := host.PortIdentifierValidator(portID); err != nil {
+		panic(fmt.Errorf("port identifier validation failed while parsing forward key path"))
+	}
+	if err := host.ChannelIdentifierValidator(channelID); err != nil {
+		panic(fmt.Errorf("channel identifier validation failed while parsing forward key path"))
+	}
+	sequence = sdk.BigEndianToUint64([]byte(parts[3]))
+
+	return portID, channelID, sequence
 }
